@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/utils/supabase'
-import { Plus, Globe, Edit, Trash2, ExternalLink } from 'lucide-react'
+import { Plus, Globe, Edit, Trash2, ExternalLink, Sparkles, ArrowLeft, X } from 'lucide-react'
+import { templates, getTemplatesByCategory, type Template } from '@/data/templates'
+import TemplatePreview from '@/components/TemplatePreview'
 
 interface Site {
   id: string
@@ -17,6 +19,9 @@ export default function DashboardPage() {
   const [sites, setSites] = useState<Site[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showTemplates, setShowTemplates] = useState(false)
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [newSite, setNewSite] = useState({ name: '', description: '' })
 
   useEffect(() => {
@@ -62,66 +67,99 @@ export default function DashboardPage() {
 
       if (error) throw error
 
-      // Create default home page
+      // Use template blocks if selected, otherwise use default
+      const blocks = selectedTemplate ? 
+        selectedTemplate.blocks.map((block, index) => ({
+          ...block,
+          id: (Date.now() + index).toString(),
+          content: block.content.replace(/Your Business|StartupName|Bistro Delicious|Creative Studio|My Blog/g, newSite.name)
+        })) : 
+        [
+          {
+            id: Date.now().toString(),
+            type: 'heading',
+            content: `Welcome to ${newSite.name}`,
+            level: 1,
+            style: {
+              textAlign: 'left',
+              fontWeight: 'bold',
+              fontStyle: 'normal',
+              textDecoration: 'none',
+              backgroundColor: 'transparent',
+              textColor: '#000000',
+              padding: '8px',
+              margin: '8px 0',
+              fontFamily: 'inherit',
+              fontSize: '2.25rem',
+              lineHeight: '1.5',
+              letterSpacing: 'normal'
+            }
+          },
+          {
+            id: (Date.now() + 1).toString(),
+            type: 'paragraph',
+            content: 'This is your new website. Start editing to make it your own!',
+            style: {
+              textAlign: 'left',
+              fontWeight: 'normal',
+              fontStyle: 'normal',
+              textDecoration: 'none',
+              backgroundColor: 'transparent',
+              textColor: '#000000',
+              padding: '8px',
+              margin: '8px 0',
+              fontFamily: 'inherit',
+              fontSize: '1rem',
+              lineHeight: '1.5',
+              letterSpacing: 'normal'
+            }
+          }
+        ]
+
+      // Create home page with template or default content
       await supabase
         .from('pages')
         .insert({
           site_id: data.id,
           title: 'Home',
           slug: 'home',
-          content: {
-            blocks: [
-              {
-                id: Date.now().toString(),
-                type: 'heading',
-                content: `Welcome to ${newSite.name}`,
-                level: 1,
-                style: {
-                  textAlign: 'left',
-                  fontWeight: 'bold',
-                  fontStyle: 'normal',
-                  textDecoration: 'none',
-                  backgroundColor: 'transparent',
-                  textColor: '#000000',
-                  padding: '8px',
-                  margin: '8px 0',
-                  fontFamily: 'inherit',
-                  fontSize: '2.25rem',
-                  lineHeight: '1.5',
-                  letterSpacing: 'normal'
-                }
-              },
-              {
-                id: (Date.now() + 1).toString(),
-                type: 'paragraph',
-                content: 'This is your new website. Start editing to make it your own!',
-                style: {
-                  textAlign: 'left',
-                  fontWeight: 'normal',
-                  fontStyle: 'normal',
-                  textDecoration: 'none',
-                  backgroundColor: 'transparent',
-                  textColor: '#000000',
-                  padding: '8px',
-                  margin: '8px 0',
-                  fontFamily: 'inherit',
-                  fontSize: '1rem',
-                  lineHeight: '1.5',
-                  letterSpacing: 'normal'
-                }
-              }
-            ]
-          },
+          content: { blocks },
           is_home: true,
         })
 
       setNewSite({ name: '', description: '' })
+      setSelectedTemplate(null)
       setShowCreateModal(false)
+      setShowTemplates(false)
       fetchSites()
     } catch (error) {
       console.error('Error creating site:', error)
     }
   }
+
+  const handleTemplateSelect = (template: Template) => {
+    setSelectedTemplate(template)
+    setShowTemplates(false)
+    setShowCreateModal(true)
+  }
+
+  const resetCreateFlow = () => {
+    setShowCreateModal(false)
+    setShowTemplates(false)
+    setSelectedTemplate(null)
+    setNewSite({ name: '', description: '' })
+  }
+
+  const categories = [
+    { id: 'all', name: 'All Templates' },
+    { id: 'business', name: 'Business' },
+    { id: 'portfolio', name: 'Portfolio' },
+    { id: 'blog', name: 'Blog' },
+    { id: 'landing', name: 'Landing Page' },
+    { id: 'ecommerce', name: 'E-commerce' }
+  ]
+
+  const filteredTemplates = selectedCategory === 'all' ? templates : getTemplatesByCategory(selectedCategory)
 
   const deleteSite = async (siteId: string) => {
     if (!confirm('Are you sure you want to delete this site?')) return
@@ -154,13 +192,22 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold text-gray-900">My Websites</h1>
           <p className="text-gray-600 mt-2">Create and manage your websites</p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="btn-primary flex items-center space-x-2"
-        >
-          <Plus className="w-4 h-4" />
-          <span>New Website</span>
-        </button>
+        <div className="flex space-x-3">
+          <button
+            onClick={() => setShowTemplates(true)}
+            className="btn-primary flex items-center space-x-2"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Use Template</span>
+          </button>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="btn-secondary flex items-center space-x-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Start Blank</span>
+          </button>
+        </div>
       </div>
 
       {sites.length === 0 ? (
@@ -168,13 +215,20 @@ export default function DashboardPage() {
           <Globe className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No websites</h3>
           <p className="mt-1 text-sm text-gray-500">Get started by creating a new website.</p>
-          <div className="mt-6">
+          <div className="mt-6 flex justify-center space-x-4">
+            <button
+              onClick={() => setShowTemplates(true)}
+              className="btn-primary flex items-center"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Use Template
+            </button>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="btn-primary"
+              className="btn-secondary flex items-center"
             >
               <Plus className="w-4 h-4 mr-2" />
-              New Website
+              Start Blank
             </button>
           </div>
         </div>
@@ -228,12 +282,103 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Template Selection Modal */}
+      {showTemplates && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-10 mx-auto p-6 border max-w-6xl shadow-lg rounded-md bg-white">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-gray-900">Choose a Template</h3>
+              <button
+                onClick={() => setShowTemplates(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Category Filter */}
+            <div className="flex flex-wrap gap-2 mb-6">
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedCategory === category.id
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+
+            {/* Templates Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
+              {filteredTemplates.map((template) => (
+                <TemplatePreview
+                  key={template.id}
+                  template={template}
+                  onClick={() => handleTemplateSelect(template)}
+                />
+              ))}
+            </div>
+
+            <div className="mt-6 flex justify-between">
+              <button
+                onClick={() => setShowTemplates(false)}
+                className="btn-secondary flex items-center"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </button>
+              <button
+                onClick={() => {
+                  setShowTemplates(false)
+                  setShowCreateModal(true)
+                }}
+                className="btn-secondary"
+              >
+                Start Blank Instead
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Create Site Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Website</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  {selectedTemplate ? `Create with ${selectedTemplate.name}` : 'Create New Website'}
+                </h3>
+                {selectedTemplate && (
+                  <button
+                    onClick={() => {
+                      setSelectedTemplate(null)
+                      setShowTemplates(true)
+                      setShowCreateModal(false)
+                    }}
+                    className="text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    Change Template
+                  </button>
+                )}
+              </div>
+
+              {selectedTemplate && (
+                <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <Sparkles className="w-4 h-4 inline mr-1" />
+                    Using template: <strong>{selectedTemplate.name}</strong>
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">{selectedTemplate.description}</p>
+                </div>
+              )}
+
               <form onSubmit={createSite}>
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -262,13 +407,13 @@ export default function DashboardPage() {
                 <div className="flex justify-end space-x-3">
                   <button
                     type="button"
-                    onClick={() => setShowCreateModal(false)}
+                    onClick={resetCreateFlow}
                     className="btn-secondary"
                   >
                     Cancel
                   </button>
                   <button type="submit" className="btn-primary">
-                    Create Website
+                    {selectedTemplate ? 'Create with Template' : 'Create Website'}
                   </button>
                 </div>
               </form>
