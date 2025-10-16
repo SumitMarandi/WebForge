@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '@/utils/supabase'
-import DragTest from '@/components/DragTest'
 import {
   Save, Eye, Globe, Plus, Type, Image as ImageIcon, Layout,
   List, Link2, Video, Code, Palette, Undo, Redo,
@@ -391,16 +390,16 @@ export default function EditorPage() {
     console.log('🎯 Event type:', e.type)
     console.log('🎯 DataTransfer available:', !!e.dataTransfer)
     console.log('🎯 Current blocks:', blocks.map(b => b.id))
-    
+
     // Ensure we have a valid block
     const block = blocks.find(b => b.id === blockId)
     if (!block) {
       console.error('❌ Block not found:', blockId)
       return
     }
-    
+
     setDraggedBlockId(blockId)
-    
+
     // Set up data transfer
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = 'move'
@@ -426,7 +425,7 @@ export default function EditorPage() {
       `
       document.body.appendChild(dragImage)
       e.dataTransfer.setDragImage(dragImage, 50, 25)
-      
+
       // Clean up drag image
       requestAnimationFrame(() => {
         if (document.body.contains(dragImage)) {
@@ -441,11 +440,11 @@ export default function EditorPage() {
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault()
     e.stopPropagation()
-    
+
     // Check if this is our block drag operation
     const data = e.dataTransfer.getData('text/plain')
     const isBlockDrag = draggedBlockId && data === draggedBlockId
-    
+
     if (isBlockDrag) {
       e.dataTransfer.dropEffect = 'move'
       console.log('🎯 Drag over index:', index, 'dragged block:', draggedBlockId)
@@ -461,7 +460,7 @@ export default function EditorPage() {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     const x = e.clientX
     const y = e.clientY
-    
+
     if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
       setDragOverIndex(null)
     }
@@ -2623,16 +2622,8 @@ export default function EditorPage() {
                       🎯 Drag the block to reorder your content - Currently dragging: {blocks.find(b => b.id === draggedBlockId)?.type}
                     </div>
                   )}
-                  
-                  {/* Debug info */}
-                  {process.env.NODE_ENV === 'development' && (
-                    <div className="mb-4">
-                      <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded mb-4">
-                        Debug: Dragged ID: {draggedBlockId || 'none'} | Drag Over Index: {dragOverIndex ?? 'none'} | Blocks: {blocks.length}
-                      </div>
-                      <DragTest />
-                    </div>
-                  )}
+
+
                   {blocks.map((block, index) => (
                     <div key={block.id}>
                       {/* Drop Zone Above Block */}
@@ -2689,7 +2680,7 @@ export default function EditorPage() {
                                 e.stopPropagation()
                               }}
                               title="Drag to reorder"
-                              style={{ 
+                              style={{
                                 cursor: 'grab',
                                 userSelect: 'none'
                               }}
