@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/utils/supabase'
+import { supabase, isSupabaseConfigured } from '@/utils/supabase'
 import { User } from '@supabase/supabase-js'
 import Layout from '@/components/Layout'
 import HomePage from '@/pages/HomePage'
@@ -8,15 +8,23 @@ import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
 import EditorPage from '@/pages/EditorPage'
 import BillingPage from '@/pages/BillingPage'
+import ProfilePage from '@/pages/ProfilePage'
 
 function App() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setLoading(false)
+      return
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
+      setLoading(false)
+    }).catch(() => {
       setLoading(false)
     })
 
@@ -46,6 +54,7 @@ function App() {
         <Route path="/dashboard" element={user ? <DashboardPage /> : <LoginPage />} />
         <Route path="/editor/:siteId" element={user ? <EditorPage /> : <LoginPage />} />
         <Route path="/billing" element={user ? <BillingPage /> : <LoginPage />} />
+        <Route path="/profile" element={user ? <ProfilePage /> : <LoginPage />} />
       </Routes>
     </Layout>
   )

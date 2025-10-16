@@ -72,13 +72,43 @@ export default function DashboardPage() {
           content: {
             blocks: [
               {
+                id: Date.now().toString(),
                 type: 'heading',
                 content: `Welcome to ${newSite.name}`,
-                level: 1
+                level: 1,
+                style: {
+                  textAlign: 'left',
+                  fontWeight: 'bold',
+                  fontStyle: 'normal',
+                  textDecoration: 'none',
+                  backgroundColor: 'transparent',
+                  textColor: '#000000',
+                  padding: '8px',
+                  margin: '8px 0',
+                  fontFamily: 'inherit',
+                  fontSize: '2.25rem',
+                  lineHeight: '1.5',
+                  letterSpacing: 'normal'
+                }
               },
               {
+                id: (Date.now() + 1).toString(),
                 type: 'paragraph',
-                content: 'This is your new website. Start editing to make it your own!'
+                content: 'This is your new website. Start editing to make it your own!',
+                style: {
+                  textAlign: 'left',
+                  fontWeight: 'normal',
+                  fontStyle: 'normal',
+                  textDecoration: 'none',
+                  backgroundColor: 'transparent',
+                  textColor: '#000000',
+                  padding: '8px',
+                  margin: '8px 0',
+                  fontFamily: 'inherit',
+                  fontSize: '1rem',
+                  lineHeight: '1.5',
+                  letterSpacing: 'normal'
+                }
               }
             ]
           },
