@@ -21,34 +21,31 @@
 3. Run the migration
 
 ### Edge Functions Setup
-1. Install Supabase CLI:
-   ```bash
-   npm install -g supabase
-   ```
+1. No need to install Supabase CLI globally - use npx instead
 
 2. Login to Supabase:
    ```bash
-   supabase login
+   npx supabase login
    ```
 
 3. Link your project:
    ```bash
    cd backend
-   supabase link --project-ref YOUR_PROJECT_REF
+   ¸ --project-ref YOUR_PROJECT_REF
    ```
 
 4. Deploy Edge Functions:
    ```bash
-   supabase functions deploy publish-site
-   supabase functions deploy create-order
-   supabase functions deploy cashfree-webhook
+   npx supabase functions deploy publish-site
+   npx supabase functions deploy create-order
+   npx supabase functions deploy cashfree-webhook
    ```
 
 5. Set environment variables for Edge Functions:
    ```bash
-   supabase secrets set CASHFREE_APP_ID=your_app_id
-   supabase secrets set CASHFREE_SECRET_KEY=your_secret_key
-   supabase secrets set CASHFREE_BASE_URL=https://sandbox.cashfree.com/pg
+   npx supabase secrets set CASHFREE_APP_ID=your_app_id
+   npx supabase secrets set CASHFREE_SECRET_KEY=your_secret_key
+   npx supabase secrets set CASHFREE_BASE_URL=https://sandbox.cashfree.com/pg
    ```
 
 ## Step 2: Cashfree Setup

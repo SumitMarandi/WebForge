@@ -11,7 +11,15 @@
     "supabase:reset": "cd backend && supabase db reset",
     "deploy:functions": "cd backend && supabase functions deploy"
   },
-  "keywords": ["web-builder", "react", "supabase", "cashfree"],
+  "keywords": [
+    "web-builder",
+    "react",
+    "supabase",
+    "cashfree"
+  ],
   "author": "WebForge Team",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "supabase": "^2.51.0"
+  }
 }
