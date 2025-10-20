@@ -10,9 +10,9 @@ import HomePage from '@/pages/HomePage'
 import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
 import EditorPage from '@/pages/EditorPage'
-import BillingPage from '@/pages/BillingPage'
 import ProfilePage from '@/pages/ProfilePage'
 import PricingPage from '@/pages/PricingPage'
+import ContactPage from '@/pages/ContactPage'
 
 function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -56,9 +56,9 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route path="/dashboard" element={user ? <DashboardPage /> : <LoginPage />} />
         <Route path="/editor/:siteId" element={user ? <EditorPage /> : <LoginPage />} />
-        <Route path="/billing" element={user ? <BillingPage /> : <LoginPage />} />
         <Route path="/profile" element={user ? <ProfilePage /> : <LoginPage />} />
       </Routes>
     </Layout>

@@ -381,48 +381,48 @@ export default function BillingPage() {
         {activeTab === 'plans' && (
           <div className="space-y-8">
             {/* Billing Toggle */}
-            <div className="flex items-center justify-center">
-              <span className={`mr-3 ${billingCycle === 'monthly' ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+            <div className="flex items-center justify-center bg-white rounded-lg p-6 border border-gray-200">
+              <span className={`mr-3 text-sm ${billingCycle === 'monthly' ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
                 Monthly
               </span>
               <button
                 onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
                   billingCycle === 'yearly' ? 'bg-blue-600' : 'bg-gray-200'
                 }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
                     billingCycle === 'yearly' ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
               </button>
-              <span className={`ml-3 ${billingCycle === 'yearly' ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+              <span className={`ml-3 text-sm ${billingCycle === 'yearly' ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
                 Yearly
               </span>
               {billingCycle === 'yearly' && (
-                <span className="ml-2 bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
+                <span className="ml-3 bg-green-100 text-green-800 text-xs font-medium px-2.5 py-1 rounded-full">
                   Save 17%
                 </span>
               )}
             </div>
 
             {/* Plans Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
               {plans.map((plan) => {
                 const isCurrentPlan = subscription?.plan === plan.id
                 
                 return (
                   <div
                     key={plan.id}
-                    className={`relative bg-white rounded-2xl border-2 transition-all duration-300 hover:shadow-xl ${
+                    className={`relative bg-white rounded-2xl shadow-lg border-2 transition-all duration-300 hover:shadow-xl ${
                       plan.popular 
-                        ? 'border-blue-500 scale-105' 
+                        ? 'border-blue-500 transform lg:scale-105 z-10' 
                         : 'border-gray-200 hover:border-gray-300'
-                    } ${isCurrentPlan ? 'ring-2 ring-green-500' : ''}`}
+                    } ${isCurrentPlan ? 'ring-2 ring-green-500 ring-offset-2' : ''}`}
                   >
                     {plan.popular && (
-                      <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                      <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-20">
                         <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg">
                           Most Popular
                         </span>
@@ -430,61 +430,92 @@ export default function BillingPage() {
                     )}
 
                     {isCurrentPlan && (
-                      <div className="absolute -top-4 right-4">
-                        <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-medium">
+                      <div className="absolute -top-3 right-4 z-20">
+                        <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md">
                           Current Plan
                         </span>
                       </div>
                     )}
 
-                    <div className="p-8">
-                      <div className="text-center mb-8">
-                        <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full mb-4 ${
-                          plan.popular ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
+                    <div className="p-6 lg:p-8">
+                      {/* Plan Header */}
+                      <div className="text-center mb-6">
+                        <div className={`inline-flex items-center justify-center w-14 h-14 rounded-full mb-4 ${
+                          plan.popular ? 'bg-blue-100 text-blue-600' : isCurrentPlan ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'
                         }`}>
                           {plan.icon}
                         </div>
                         <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                        <p className="text-gray-600 text-sm mb-4">{plan.description}</p>
+                        <p className="text-gray-600 text-sm mb-4 min-h-[2.5rem] flex items-center justify-center">{plan.description}</p>
                         
                         <div className="mb-4">
                           <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
-                          <span className="text-gray-600 ml-1">{plan.period}</span>
+                          <span className="text-gray-600 ml-1 text-lg">{plan.period}</span>
                         </div>
 
                         {billingCycle === 'yearly' && plan.id !== 'free' && (
-                          <p className="text-sm text-green-600 font-medium">
-                            Save ₹{plan.id === 'pro' ? '598' : '1,998'} per year
-                          </p>
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-2 mb-4">
+                            <p className="text-sm text-green-700 font-medium">
+                              💰 Save ₹{plan.id === 'pro' ? '598' : '1,998'} per year
+                            </p>
+                          </div>
                         )}
                       </div>
 
-                      <div className="space-y-4 mb-8">
+                      {/* Features List */}
+                      <div className="space-y-3 mb-8 min-h-[12rem]">
                         {plan.features.map((feature, index) => (
                           <div key={index} className="flex items-start">
-                            <Check className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
-                            <span className="text-gray-700 text-sm">{feature}</span>
+                            <div className="flex-shrink-0 mt-0.5">
+                              <Check className="w-5 h-5 text-green-500" />
+                            </div>
+                            <span className="text-gray-700 text-sm ml-3 leading-relaxed">{feature}</span>
                           </div>
                         ))}
                       </div>
 
+                      {/* Action Button */}
                       <button
                         onClick={() => !isCurrentPlan && handleUpgrade(plan.id)}
                         disabled={isCurrentPlan}
-                        className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+                        className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
                           isCurrentPlan
-                            ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                            ? 'bg-gray-100 text-gray-500 cursor-not-allowed border border-gray-200'
                             : plan.popular
-                            ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
-                            : 'bg-gray-900 text-white hover:bg-gray-800'
+                            ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
+                            : 'bg-gray-900 text-white hover:bg-gray-800 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
                         }`}
                       >
-                        {isCurrentPlan ? 'Current Plan' : plan.buttonText}
+                        {isCurrentPlan ? '✓ Current Plan' : plan.buttonText}
                       </button>
                     </div>
                   </div>
                 )
               })}
+            </div>
+
+            {/* Additional Info */}
+            <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-8 text-center text-white">
+              <Crown className="mx-auto h-12 w-12 text-yellow-400 mb-4" />
+              <h3 className="text-2xl font-bold mb-4">Need Something Custom?</h3>
+              <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
+                Looking for enterprise features, custom integrations, or have specific requirements? 
+                Let's discuss a tailored solution for your business.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <Link
+                  to="/contact"
+                  className="bg-white text-gray-900 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+                >
+                  Contact Sales
+                </Link>
+                <a
+                  href="mailto:sales@webforge.com"
+                  className="text-gray-300 hover:text-white transition-colors"
+                >
+                  sales@webforge.com
+                </a>
+              </div>
             </div>
           </div>
         )}

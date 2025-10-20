@@ -91,11 +91,7 @@ export default function PricingPage() {
     }
   ]
 
-  const yearlyDiscount = (monthlyPrice: number) => {
-    const yearlyPrice = monthlyPrice * 10 // 2 months free
-    const savings = (monthlyPrice * 12) - yearlyPrice
-    return { yearlyPrice, savings }
-  }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -206,7 +202,7 @@ export default function PricingPage() {
 
                 {/* CTA Button */}
                 <Link
-                  to={plan.id === 'free' ? '/dashboard' : '/billing'}
+                  to={plan.id === 'free' ? '/dashboard' : '/profile?tab=billing'}
                   className={`w-full ${plan.buttonStyle} flex items-center justify-center group`}
                 >
                   {plan.buttonText}
