@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/utils/supabase'
-import { Plus, Globe, Edit, Trash2, ExternalLink, Sparkles, ArrowLeft, X } from 'lucide-react'
+import { Plus, Globe, Edit, Trash2, ExternalLink, Sparkles, ArrowLeft, X, Download } from 'lucide-react'
 import { templates, getTemplatesByCategory, type Template } from '@/data/templates'
 import TemplatePreview from '@/components/TemplatePreview'
+import CodeDownload from '@/components/CodeDownload'
+import SubscriptionStatus from '@/components/SubscriptionStatus'
+import { WebsiteLimitPrompt, DownloadPrompt } from '@/components/UpgradePrompt'
+import { useSubscription } from '@/contexts/SubscriptionContext'
+import { canCreateWebsite, canDownloadCode } from '@/utils/subscription'
 
 interface Site {
   id: string
@@ -23,6 +28,12 @@ export default function DashboardPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [newSite, setNewSite] = useState({ name: '', description: '' })
+  const [showDownloadModal, setShowDownloadModal] = useState(false)
+  const [downloadSite, setDownloadSite] = useState<Site | null>(null)
+  const [downloadPages, setDownloadPages] = useState<any[]>([])
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState<'website' | 'download' | null>(null)
+  
+  const { subscription } = useSubscription()
 
   useEffect(() => {
     fetchSites()
@@ -47,6 +58,12 @@ export default function DashboardPage() {
   const createSite = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newSite.name.trim()) return
+
+    // Check subscription limits
+    if (subscription && !canCreateWebsite({ ...subscription, websiteCount: sites.length })) {
+      setShowUpgradePrompt('website')
+      return
+    }
 
     try {
       const slug = newSite.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
@@ -161,6 +178,80 @@ export default function DashboardPage() {
 
   const filteredTemplates = selectedCategory === 'all' ? templates : getTemplatesByCategory(selectedCategory)
 
+  const handleDownloadCode = async (site: Site) => {
+    // Check subscription limits
+    if (subscription && !canDownloadCode(subscription)) {
+      setShowUpgradePrompt('download')
+      return
+    }
+
+    try {
+      // Fetch pages for the site
+      const { data: pagesData, error } = await supabase
+        .from('pages')
+        .select('*')
+        .eq('site_id', site.id)
+        .order('is_home', { ascending: false })
+
+      if (error) throw error
+
+      setDownloadSite(site)
+      setDownloadPages(pagesData || [])
+      setShowDownloadModal(true)
+    } catch (error) {
+      console.error('Error fetching site data for download:', error)
+      alert('Error preparing download. Please try again.')
+    }
+  }
+
+  const handleQuickPreview = async (site: Site) => {
+    try {
+      // Fetch pages for the site
+      const { data: pagesData, error } = await supabase
+        .from('pages')
+        .select('*')
+        .eq('site_id', site.id)
+        .order('is_home', { ascending: false })
+
+      if (error) throw error
+
+      // Generate HTML with inline CSS and JS for quick preview
+      const { generateHTML, generateCSS, generateJavaScript } = await import('@/utils/codeGenerator')
+      const html = generateHTML(site, pagesData || [])
+      const css = generateCSS(site, pagesData || [])
+      const js = generateJavaScript(site, pagesData || [])
+
+      const fullHTML = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${site.name} - Preview</title>
+    <style>
+${css}
+    </style>
+</head>
+<body>
+    ${html.match(/<body[^>]*>([\s\S]*)<\/body>/)?.[1] || html}
+    <script>
+${js}
+    </script>
+</body>
+</html>`
+
+      // Open in new tab
+      const newWindow = window.open()
+      if (newWindow) {
+        newWindow.document.write(fullHTML)
+        newWindow.document.close()
+      }
+    } catch (error) {
+      console.error('Error generating preview:', error)
+      alert('Error generating preview. Please try again.')
+    }
+  }
+
   const deleteSite = async (siteId: string) => {
     if (!confirm('Are you sure you want to delete this site?')) return
 
@@ -193,6 +284,19 @@ export default function DashboardPage() {
           <p className="text-gray-600 mt-2">Create and manage your websites</p>
         </div>
         <div className="flex space-x-3">
+          {sites.length > 0 && (
+            <button
+              onClick={() => {
+                // For now, just show a message about bulk download
+                alert('Bulk download feature coming soon! Use individual download buttons for now.')
+              }}
+              className="btn-secondary flex items-center space-x-2"
+              title="Download all sites"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download All</span>
+            </button>
+          )}
           <button
             onClick={() => setShowTemplates(true)}
             className="btn-primary flex items-center space-x-2"
@@ -233,7 +337,49 @@ export default function DashboardPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <>
+          {/* Upgrade Prompts */}
+          {showUpgradePrompt === 'website' && subscription && (
+            <div className="mb-6">
+              <WebsiteLimitPrompt 
+                currentPlan={subscription.plan} 
+                onClose={() => setShowUpgradePrompt(null)} 
+              />
+            </div>
+          )}
+          
+          {showUpgradePrompt === 'download' && subscription && (
+            <div className="mb-6">
+              <DownloadPrompt 
+                currentPlan={subscription.plan} 
+                onClose={() => setShowUpgradePrompt(null)} 
+              />
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+            {/* Subscription Status */}
+            <div className="lg:col-span-1">
+              {subscription && (
+                <SubscriptionStatus websiteCount={sites.length} />
+              )}
+            </div>
+            
+            {/* Info Banner */}
+            <div className="lg:col-span-3">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 h-full flex items-center">
+                <Download className="w-5 h-5 text-blue-600 mr-3 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm font-medium text-blue-900">Export Your Websites</h3>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Download your websites as HTML, CSS & JavaScript files. Perfect for hosting anywhere or further customization.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {sites.map((site) => (
             <div key={site.id} className="bg-white overflow-hidden shadow rounded-lg">
               <div className="p-6">
@@ -243,12 +389,28 @@ export default function DashboardPage() {
                     <Link
                       to={`/editor/${site.id}`}
                       className="text-gray-400 hover:text-gray-600"
+                      title="Edit site"
                     >
                       <Edit className="w-4 h-4" />
                     </Link>
                     <button
+                      onClick={() => handleQuickPreview(site)}
+                      className="text-gray-400 hover:text-green-600"
+                      title="Quick preview in new tab"
+                    >
+                      <Globe className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDownloadCode(site)}
+                      className="text-gray-400 hover:text-blue-600"
+                      title="Download code"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                    <button
                       onClick={() => deleteSite(site.id)}
                       className="text-gray-400 hover:text-red-600"
+                      title="Delete site"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -280,6 +442,7 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
+        </>
       )}
 
       {/* Template Selection Modal */}
@@ -420,6 +583,19 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Code Download Modal */}
+      {showDownloadModal && downloadSite && (
+        <CodeDownload
+          site={downloadSite}
+          pages={downloadPages}
+          onClose={() => {
+            setShowDownloadModal(false)
+            setDownloadSite(null)
+            setDownloadPages([])
+          }}
+        />
       )}
     </div>
   )

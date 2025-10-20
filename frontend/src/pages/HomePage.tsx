@@ -15,7 +15,7 @@ export default function HomePage() {
                   <span className="block text-primary-600 xl:inline">websites easily</span>
                 </h1>
                 <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
-                  Create, edit, and publish professional websites without coding. 
+                  Create, edit, and publish professional websites without coding.
                   WebForge makes web development accessible to everyone.
                 </p>
                 <div className="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">

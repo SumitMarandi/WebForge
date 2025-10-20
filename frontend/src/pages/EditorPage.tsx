@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '@/utils/supabase'
 import {
-  Save, Eye, Globe, Plus, Type, Image as ImageIcon, Layout,
+  Save, Globe, Plus, Type, Image as ImageIcon, Layout,
   List, Link2, Video, Code, Palette, Undo, Redo,
   FileText, Trash2, Copy, AlignLeft,
   AlignCenter, AlignRight, Bold, Italic, Underline,
   Smartphone, Tablet, Monitor, ChevronDown, Home,
   Edit3, X, Check, GripVertical, Menu
 } from 'lucide-react'
+import ImageUpload from '@/components/ImageUpload'
 
 interface Site {
   id: string
@@ -95,7 +96,6 @@ export default function EditorPage() {
 
   const [history, setHistory] = useState<Block[][]>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
-  const [previewMode, setPreviewMode] = useState(false)
   const [showPageManager, setShowPageManager] = useState(false)
   const [newPageTitle, setNewPageTitle] = useState('')
   const [editingPageId, setEditingPageId] = useState<string | null>(null)
@@ -537,238 +537,7 @@ export default function EditorPage() {
     setDragOverIndex(null)
   }
 
-  // Render block for preview mode (no editing controls)
-  const renderPreviewBlock = (block: Block) => {
-    const blockStyle = {
-      textAlign: block.style?.textAlign || 'left',
-      fontWeight: block.style?.fontWeight || 'normal',
-      fontStyle: block.style?.fontStyle || 'normal',
-      textDecoration: block.style?.textDecoration || 'none',
-      backgroundColor: block.style?.backgroundColor || 'transparent',
-      color: block.style?.textColor || '#000000',
-      padding: block.style?.padding || '8px',
-      margin: block.style?.margin || '8px 0',
-      fontFamily: block.style?.fontFamily || 'inherit',
-      fontSize: block.style?.fontSize || (block.type === 'heading' ?
-        (block.level === 1 ? '2.25rem' : block.level === 2 ? '1.875rem' : '1.5rem') : '1rem'),
-      lineHeight: block.style?.lineHeight || '1.5',
-      letterSpacing: block.style?.letterSpacing || 'normal'
-    }
 
-    switch (block.type) {
-      case 'heading':
-        return (
-          <div style={blockStyle} className="font-bold">
-            {block.content || 'Untitled Heading'}
-          </div>
-        )
-
-      case 'paragraph':
-        return (
-          <div style={blockStyle} className="leading-relaxed">
-            {block.content || 'Empty paragraph'}
-          </div>
-        )
-
-      case 'image':
-        if (!block.content) return null
-        const imageSize = {
-          small: { width: '200px', height: 'auto' },
-          medium: { width: '400px', height: 'auto' },
-          large: { width: '600px', height: 'auto' },
-          full: { width: '100%', height: 'auto' },
-          custom: {
-            width: block.settings?.imageWidth || '400px',
-            height: block.settings?.imageHeight || 'auto'
-          }
-        }[block.settings?.imageSize || 'medium']
-
-        return (
-          <div style={blockStyle} className={`flex ${block.settings?.imageAlignment === 'left' ? 'justify-start' :
-            block.settings?.imageAlignment === 'right' ? 'justify-end' : 'justify-center'
-            }`}>
-            <img
-              src={block.content}
-              alt={block.settings?.imageAlt || "Image"}
-              className="rounded-lg shadow-sm border border-gray-200"
-              style={{
-                ...imageSize,
-                maxWidth: '100%',
-                objectFit: 'cover'
-              }}
-            />
-          </div>
-        )
-
-      case 'button':
-        return (
-          <div style={blockStyle} className={`flex ${block.style?.textAlign === 'left' ? 'justify-start' :
-            block.style?.textAlign === 'right' ? 'justify-end' : 'justify-center'
-            }`}>
-            <a
-              href={block.settings?.buttonUrl || '#'}
-              className={`px-6 py-3 rounded-lg font-medium transition-colors ${block.settings?.buttonStyle === 'primary' ? 'bg-blue-600 text-white hover:bg-blue-700' :
-                block.settings?.buttonStyle === 'secondary' ? 'bg-gray-600 text-white hover:bg-gray-700' :
-                  'border-2 border-blue-600 text-blue-600 hover:bg-blue-50'
-                }`}
-              target={block.settings?.buttonUrl?.startsWith('http') ? '_blank' : '_self'}
-              rel={block.settings?.buttonUrl?.startsWith('http') ? 'noopener noreferrer' : undefined}
-            >
-              {block.settings?.buttonText || block.content || 'Button'}
-            </a>
-          </div>
-        )
-
-      case 'navigation':
-        const navStyles = {
-          backgroundColor: block.settings?.headerBackgroundColor || '#ffffff',
-          color: block.settings?.headerTextColor || '#374151',
-          borderColor: block.settings?.headerBorderColor || '#e5e7eb',
-          padding: block.settings?.headerPadding || '16px',
-          borderRadius: block.settings?.headerRounded ? '8px' : '0px',
-          boxShadow: block.settings?.headerShadow ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
-        }
-
-        const logoSizeClass = {
-          small: 'text-lg',
-          medium: 'text-xl',
-          large: 'text-2xl'
-        }[block.settings?.logoSize || 'medium']
-
-        const menuSpacingClass = {
-          tight: block.settings?.navigationStyle === 'vertical' ? 'space-y-1' : 'space-x-3',
-          normal: block.settings?.navigationStyle === 'vertical' ? 'space-y-2' : 'space-x-6',
-          loose: block.settings?.navigationStyle === 'vertical' ? 'space-y-4' : 'space-x-8'
-        }[block.settings?.menuItemSpacing || 'normal']
-
-        return (
-          <nav
-            className={`${block.settings?.navigationStyle === 'vertical' ? 'flex-col' : 'flex-row'
-              } flex items-center justify-${block.settings?.navigationAlignment === 'left' ? 'start' :
-                block.settings?.navigationAlignment === 'right' ? 'end' : 'center'
-              } border`}
-            style={navStyles}
-          >
-            {block.settings?.showLogo && (
-              <div
-                className={`${block.settings?.navigationStyle === 'vertical' ? 'mb-4' : 'mr-6'
-                  } font-bold ${logoSizeClass}`}
-                style={{ color: block.settings?.headerTextColor || '#374151' }}
-              >
-                {block.settings?.logoText || 'Your Logo'}
-              </div>
-            )}
-            <div className={`${block.settings?.navigationStyle === 'vertical' ? 'flex-col' : 'flex-row'
-              } flex ${menuSpacingClass}`}>
-              {(block.settings?.navigationItems || []).map((item) => (
-                <a
-                  key={item.id}
-                  href={item.url}
-                  className="transition-colors font-medium hover:opacity-80"
-                  style={{
-                    color: block.settings?.headerTextColor || '#374151',
-                    textDecoration: 'none'
-                  }}
-                  target={item.isExternal ? '_blank' : '_self'}
-                  rel={item.isExternal ? 'noopener noreferrer' : undefined}
-                >
-                  {item.text}
-                </a>
-              ))}
-            </div>
-          </nav>
-        )
-
-      case 'list':
-        return (
-          <div style={blockStyle}>
-            {block.settings?.listType === 'numbered' ? (
-              <ol className="list-decimal list-inside space-y-1">
-                {block.content.split('\n').filter(item => item.trim()).map((item, index) => (
-                  <li key={index}>{item}</li>
-                ))}
-              </ol>
-            ) : (
-              <ul className="list-disc list-inside space-y-1">
-                {block.content.split('\n').filter(item => item.trim()).map((item, index) => (
-                  <li key={index}>{item}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )
-
-      case 'link':
-        return (
-          <div style={blockStyle}>
-            <a
-              href={block.settings?.linkUrl || '#'}
-              className="text-blue-600 hover:text-blue-800 underline"
-              target={block.settings?.linkUrl?.startsWith('http') ? '_blank' : '_self'}
-              rel={block.settings?.linkUrl?.startsWith('http') ? 'noopener noreferrer' : undefined}
-            >
-              {block.settings?.linkText || block.content || 'Link'}
-            </a>
-          </div>
-        )
-
-      case 'video':
-        const getEmbedUrl = (url: string) => {
-          if (!url) return null
-          const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/
-          const youtubeMatch = url.match(youtubeRegex)
-          if (youtubeMatch) {
-            return `https://www.youtube.com/embed/${youtubeMatch[1]}?rel=0&modestbranding=1`
-          }
-          const vimeoRegex = /(?:vimeo\.com\/)([0-9]+)/
-          const vimeoMatch = url.match(vimeoRegex)
-          if (vimeoMatch) {
-            return `https://player.vimeo.com/video/${vimeoMatch[1]}`
-          }
-          if (url.includes('embed') || url.includes('player')) {
-            return url
-          }
-          return null
-        }
-
-        const embedUrl = getEmbedUrl(block.settings?.videoUrl || '')
-        if (!embedUrl) return null
-
-        return (
-          <div style={blockStyle}>
-            <div className="aspect-video bg-black rounded-lg overflow-hidden">
-              <iframe
-                src={embedUrl}
-                className="w-full h-full"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                title="Video Player"
-              />
-            </div>
-          </div>
-        )
-
-      case 'code':
-        return (
-          <div style={blockStyle}>
-            <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto">
-              <code>{block.content}</code>
-            </pre>
-          </div>
-        )
-
-      case 'divider':
-        return (
-          <div style={blockStyle}>
-            <hr className="border-t-2 border-gray-300 my-4" />
-          </div>
-        )
-
-      default:
-        return null
-    }
-  }
 
   const updateBlock = (id: string, updates: Partial<Block>) => {
     setBlocks(blocks.map(block =>
@@ -1266,15 +1035,32 @@ export default function EditorPage() {
               )}
             </div>
 
-            <div className="mt-3 space-y-3">
-              {/* Image URL Input */}
-              <input
-                type="url"
-                value={block.content}
-                onChange={(e) => updateBlock(block.id, { content: e.target.value })}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Image URL (e.g., https://example.com/image.jpg or upload to a service like Imgur)"
-              />
+            <div className="mt-3 space-y-4">
+              {/* Image Upload Component */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Upload Image
+                </label>
+                <ImageUpload
+                  currentImageUrl={block.content}
+                  onImageUploaded={(url) => updateBlock(block.id, { content: url })}
+                  className="mb-3"
+                />
+              </div>
+
+              {/* Alternative: Image URL Input */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Or enter image URL
+                </label>
+                <input
+                  type="url"
+                  value={block.content}
+                  onChange={(e) => updateBlock(block.id, { content: e.target.value })}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
 
               {/* Image Controls */}
               <div className="grid grid-cols-2 gap-3">
@@ -1346,6 +1132,44 @@ export default function EditorPage() {
                   placeholder="Describe the image for screen readers"
                 />
               </div>
+
+              {/* Image Actions */}
+              {block.content && (
+                <div className="pt-2 border-t border-gray-200">
+                  <label className="block text-xs font-medium text-gray-700 mb-2">Image Actions</label>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => window.open(block.content, '_blank')}
+                      className="flex-1 px-3 py-2 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                    >
+                      View Full Size
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(block.content)
+                          // Show success feedback - you could integrate with toast system here
+                          const button = document.activeElement as HTMLButtonElement
+                          const originalText = button.textContent
+                          button.textContent = 'Copied!'
+                          button.classList.add('bg-green-100', 'text-green-700')
+                          button.classList.remove('bg-blue-100', 'text-blue-700')
+                          setTimeout(() => {
+                            button.textContent = originalText
+                            button.classList.remove('bg-green-100', 'text-green-700')
+                            button.classList.add('bg-blue-100', 'text-blue-700')
+                          }, 2000)
+                        } catch (err) {
+                          console.error('Failed to copy URL:', err)
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                    >
+                      Copy URL
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Quick Size Buttons */}
               <div className="flex space-x-2">
@@ -1924,15 +1748,7 @@ export default function EditorPage() {
                 </button>
               </div>
 
-              {/* Preview Toggle */}
-              <button
-                onClick={() => setPreviewMode(!previewMode)}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${previewMode ? 'bg-blue-100 text-blue-700' : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-              >
-                <Eye className="w-4 h-4" />
-                <span>{previewMode ? 'Edit' : 'Preview'}</span>
-              </button>
+
 
               {/* Full Preview Modal */}
               <button
@@ -2627,7 +2443,7 @@ export default function EditorPage() {
                   {blocks.map((block, index) => (
                     <div key={block.id}>
                       {/* Drop Zone Above Block */}
-                      {!previewMode && draggedBlockId && (
+                      {draggedBlockId && (
                         <div
                           className={`transition-all duration-200 ${dragOverIndex === index
                             ? 'h-6 bg-blue-500 rounded-lg mx-2 mb-3 opacity-90 shadow-lg border-2 border-blue-300'
@@ -2649,45 +2465,50 @@ export default function EditorPage() {
                       <div
                         className={`group relative rounded-md transition-all duration-200 ${selectedBlockId === block.id
                           ? 'ring-2 ring-blue-500 bg-blue-50'
-                          : previewMode
-                            ? ''
-                            : 'border border-transparent hover:border-gray-300 hover:bg-gray-50'
-                          } ${previewMode ? 'p-0' : 'p-4'} ${draggedBlockId === block.id ? 'opacity-50 transform rotate-1 scale-105' : ''
+                          : 'border border-transparent hover:border-gray-300 hover:bg-gray-50'
+                          } p-4 ${draggedBlockId === block.id ? 'opacity-50 transform rotate-1 scale-105' : ''
                           }`}
-                        onClick={() => !previewMode && setSelectedBlockId(block.id)}
+                        onClick={(e) => {
+                          // Don't select block if clicking on drag handle
+                          if (!(e.target as HTMLElement).closest('.drag-handle')) {
+                            setSelectedBlockId(block.id)
+                          }
+                        }}
                       >
-                        {!previewMode && (
-                          <>
-                            {/* Drag Handle */}
-                            <button
-                              className="absolute top-2 left-2 opacity-60 group-hover:opacity-100 transition-opacity z-10 p-2 rounded-md shadow-md cursor-grab active:cursor-grabbing border border-gray-200 drag-handle bg-white hover:bg-blue-50 hover:shadow-lg"
-                              draggable
-                              onDragStart={(e) => {
-                                console.log('🎯 Drag handle clicked for block:', block.id)
-                                e.stopPropagation()
-                                handleDragStart(e, block.id)
-                              }}
-                              onDragEnd={(e) => {
-                                console.log('🎯 Drag ended for block:', block.id)
-                                e.stopPropagation()
-                                handleDragEnd()
-                              }}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                e.preventDefault()
-                              }}
-                              onMouseDown={(e) => {
-                                e.stopPropagation()
-                              }}
-                              title="Drag to reorder"
-                              style={{
-                                cursor: 'grab',
-                                userSelect: 'none'
-                              }}
-                            >
-                              <GripVertical className={`w-4 h-4 ${draggedBlockId === block.id ? 'text-blue-600' : 'text-gray-600 hover:text-blue-600'
-                                }`} />
-                            </button>
+                        {/* Drag Handle */}
+                        <div
+                          className="absolute top-2 left-2 opacity-80 group-hover:opacity-100 transition-opacity z-20 p-2 rounded-md shadow-md cursor-grab active:cursor-grabbing border border-gray-200 drag-handle bg-white hover:bg-blue-50 hover:shadow-lg"
+                          draggable={true}
+                          onDragStart={(e) => {
+                            console.log('🎯 DRAG START EVENT FIRED for block:', block.id)
+                            e.stopPropagation()
+                            handleDragStart(e, block.id)
+                          }}
+                          onDragEnd={(e) => {
+                            console.log('🎯 DRAG END EVENT FIRED for block:', block.id)
+                            e.stopPropagation()
+                            handleDragEnd()
+                          }}
+                          onMouseDown={(e) => {
+                            console.log('🎯 MOUSE DOWN on drag handle for block:', block.id)
+                            e.stopPropagation()
+                          }}
+                          onClick={(e) => {
+                            console.log('🎯 CLICK on drag handle for block:', block.id)
+                            e.stopPropagation()
+                            e.preventDefault()
+                          }}
+                          title="Drag to reorder"
+                          style={{
+                            cursor: 'grab',
+                            userSelect: 'none',
+                            WebkitUserSelect: 'none',
+                            touchAction: 'none'
+                          }}
+                        >
+                          <GripVertical className={`w-4 h-4 ${draggedBlockId === block.id ? 'text-blue-600' : 'text-gray-600 hover:text-blue-600'
+                            }`} />
+                        </div>
 
                             {/* Block Controls */}
                             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1 z-10">
@@ -2732,10 +2553,8 @@ export default function EditorPage() {
                                 <Trash2 className="w-3 h-3" />
                               </button>
                             </div>
-                          </>
-                        )}
 
-                        {block.type === 'heading' && !previewMode && (
+                        {block.type === 'heading' && (
                           <div className="mb-2">
                             <select
                               value={block.level || 1}
@@ -2755,7 +2574,7 @@ export default function EditorPage() {
                   ))}
 
                   {/* Final Drop Zone */}
-                  {!previewMode && blocks.length > 0 && draggedBlockId && (
+                  {blocks.length > 0 && draggedBlockId && (
                     <div
                       className={`transition-all duration-200 ${dragOverIndex === blocks.length
                         ? 'h-6 bg-blue-500 rounded-lg mx-2 mt-3 opacity-90 shadow-lg border-2 border-blue-300'
@@ -3047,7 +2866,7 @@ export default function EditorPage() {
                       <div className="space-y-4">
                         {blocks.map((block) => (
                           <div key={block.id}>
-                            {renderPreviewBlock(block)}
+                            {renderBlock(block)}
                           </div>
                         ))}
                       </div>

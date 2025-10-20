@@ -34,6 +34,17 @@ export default function Layout({ children, user }: LayoutProps) {
             </div>
 
             <div className="flex items-center space-x-4">
+              <Link
+                to="/pricing"
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  isActive('/pricing') 
+                    ? 'text-blue-600 bg-blue-50' 
+                    : 'text-gray-700 hover:text-blue-600'
+                }`}
+              >
+                Pricing
+              </Link>
+              
               {user ? (
                 <>
                   <Link

@@ -3,12 +3,16 @@ import { useEffect, useState } from 'react'
 import { supabase, isSupabaseConfigured } from '@/utils/supabase'
 import { User } from '@supabase/supabase-js'
 import Layout from '@/components/Layout'
+import SessionManager from '@/components/SessionManager'
+import { ToastProvider } from '@/components/ToastContainer'
+import { SubscriptionProvider } from '@/contexts/SubscriptionContext'
 import HomePage from '@/pages/HomePage'
 import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
 import EditorPage from '@/pages/EditorPage'
 import BillingPage from '@/pages/BillingPage'
 import ProfilePage from '@/pages/ProfilePage'
+import PricingPage from '@/pages/PricingPage'
 
 function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -46,17 +50,31 @@ function App() {
     )
   }
 
-  return (
+  const content = (
     <Layout user={user}>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
         <Route path="/dashboard" element={user ? <DashboardPage /> : <LoginPage />} />
         <Route path="/editor/:siteId" element={user ? <EditorPage /> : <LoginPage />} />
         <Route path="/billing" element={user ? <BillingPage /> : <LoginPage />} />
         <Route path="/profile" element={user ? <ProfilePage /> : <LoginPage />} />
       </Routes>
     </Layout>
+  )
+
+  // Wrap everything with providers
+  return (
+    <ToastProvider>
+      <SubscriptionProvider>
+        {user ? (
+          <SessionManager>
+            {content}
+          </SessionManager>
+        ) : content}
+      </SubscriptionProvider>
+    </ToastProvider>
   )
 }
 

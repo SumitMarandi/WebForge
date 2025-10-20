@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/utils/supabase'
 import { User, Mail, Phone, Briefcase, Save, ArrowLeft, Camera, Shield } from 'lucide-react'
+import SessionStatus from '@/components/SessionStatus'
+import { useToast } from '@/components/ToastContainer'
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null)
@@ -26,6 +28,7 @@ export default function ProfilePage() {
     confirmPassword: ''
   })
   const [showPasswordSection, setShowPasswordSection] = useState(false)
+  const { showToast } = useToast()
 
   useEffect(() => {
     fetchUserProfile()
@@ -365,6 +368,13 @@ export default function ProfilePage() {
               )}
             </div>
           </div>
+
+          {/* Session Status */}
+          <SessionStatus 
+            onExtendSession={() => {
+              showToast('success', 'Session Extended', 'Your session has been extended for another 2 days.')
+            }}
+          />
         </div>
       </div>
     </div>
